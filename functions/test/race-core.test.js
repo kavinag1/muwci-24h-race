@@ -38,10 +38,10 @@ const validSnapshot = () => ({
 });
 
 test("PIN comparison accepts only the exact secret", () => {
-  assert.equal(pinMatches("16hr", "16hr"), true);
-  assert.equal(pinMatches("16hr", "16hr\n"), true);
-  assert.equal(pinMatches("16HR", "16hr"), false);
-  assert.equal(pinMatches("", "16hr"), false);
+  assert.equal(pinMatches("correct-pin", "correct-pin"), true);
+  assert.equal(pinMatches("correct-pin", "correct-pin\n"), true);
+  assert.equal(pinMatches("CORRECT-PIN", "correct-pin"), false);
+  assert.equal(pinMatches("", "correct-pin"), false);
 });
 
 test("a complete race snapshot is accepted", () => {

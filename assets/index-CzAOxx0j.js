@@ -50872,8 +50872,6 @@ function z_(t) {
 let U_, nd, ut;
 const Kt = typeof __app_id < "u" ? __app_id : "muwci-race-v2"
   , I6 = 1.3
-  , voe = "16hr"
-  , yoe = "16hr"
   , sr = 1440 * 60
   , P6 = "06:07:00"
   , Wu = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4"]
@@ -51473,8 +51471,6 @@ function Eoe() {
         }))
     }
       , AdminLoginSubmit = async () => {
-        if (AdminPassword !== yoe)
-            return alert("Incorrect Password");
         try {
             await window.MuwciRaceStore.loginAdmin(AdminPassword),
             o(!0),
@@ -51887,8 +51883,15 @@ function Eoe() {
             type: "resetLogin"
         })
     }
-      , ResetLoginSubmit = () => {
-        AdminPassword === voe ? Xt() : alert("Incorrect password")
+      , ResetLoginSubmit = async () => {
+        try {
+            await window.MuwciRaceStore.loginAdmin(AdminPassword),
+            await Xt(),
+            c(null)
+        } catch (z) {
+            console.error("Factory reset authorization failed:", z),
+            alert(z.message || "Incorrect password")
+        }
     }
       , Ft = T.useMemo( () => {
         const z = j.flatMap(ie => ie.members.map(he => {
