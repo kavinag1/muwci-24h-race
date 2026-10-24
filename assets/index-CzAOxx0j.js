@@ -52542,7 +52542,9 @@ function Eoe() {
                         }, z.id))
                     }), C.jsxs("div", {
                         className: "space-y-6",
-                        children: [C.jsxs("div", {
+                        children: [C.jsx(FN, {
+                            projectedTeams: Ra
+                        }), C.jsxs("div", {
                             className: "bg-slate-900/30 rounded-3xl border border-slate-800 p-6 md:p-8",
                             children: [C.jsx("h3", {
                                 className: "text-slate-500 font-bold uppercase tracking-widest mb-6",
@@ -52580,8 +52582,6 @@ function Eoe() {
                                     })]
                                 }, ie))
                             })]
-                        }), C.jsx(FN, {
-                            projectedTeams: Ra
                         })]
                     })]
                 }), C.jsxs("div", {
