@@ -50872,7 +50872,7 @@ function z_(t) {
 let U_, nd, ut;
 const Kt = typeof __app_id < "u" ? __app_id : "muwci-race-v2"
   , I6 = 1.3
-  , voe = "6767"
+  , voe = "16hr"
   , yoe = "16hr"
   , sr = 1440 * 60
   , P6 = "06:07:00"
@@ -50946,7 +50946,7 @@ const B_ = t => {
   , q_ = (t, e) => {
     const n = t.totalDurationSeconds || sr
       , r = t.startTime || e;
-    return t.status === "running" ? Math.max(0, n - (e - r) / 1e3) : t.timeRemainingAtPause ?? n
+    return t.status === "running" ? Math.max(0, Math.floor(n - (e - r) / 1e3)) : Math.max(0, Math.floor(t.timeRemainingAtPause ?? n))
 }
   , Gt = ({children: t, onClick: e, variant: n="primary", className: r="", disabled: a=!1}) => {
     const o = "px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -51476,9 +51476,10 @@ function Eoe() {
         if (AdminPassword !== yoe)
             return alert("Incorrect Password");
         try {
-            await window.MuwciRaceStore.loginAdmin(),
-            window.MuwciRaceStore.isAdmin() && (o(!0),
-            c(null))
+            await window.MuwciRaceStore.loginAdmin(AdminPassword),
+            o(!0),
+            c(null),
+            r("setup")
         } catch (z) {
             console.error("Admin sign-in failed:", z),
             alert(z.message || "Admin sign-in failed. Please try again.")
@@ -51492,12 +51493,19 @@ function Eoe() {
             totalDurationSeconds: sr
         }),
         U([]),
+        Se([]),
         alert("Database Cleared."),
         r("setup")
     }
       , sn = async (z, ie, he) => {
         if (!t)
             return;
+        if (!z.trim())
+            return alert("Enter a team name");
+        if (he.length === 0)
+            return alert("Add at least one runner");
+        if (he.length > 12)
+            return alert("A team can have up to 12 runners");
         const Ee = {
             name: z,
             color: ie,
@@ -51620,11 +51628,11 @@ function Eoe() {
             K({
                 ...q,
                 status: "paused",
-                timeRemainingAtPause: z,
+                timeRemainingAtPause: Math.max(0, Math.floor(z)),
                 totalDurationSeconds: ie
             })
         } else {
-            const he = ie - q.timeRemainingAtPause
+            const he = ie - Math.max(0, Math.floor(q.timeRemainingAtPause))
               , Ee = await an();
             K({
                 status: "running",
@@ -51842,11 +51850,14 @@ function Eoe() {
         const z = de.split(",").map(he => he.trim()).filter(he => he);
         if (z.length === 0)
             return alert("At least one team member is required");
+        if (z.length > 12)
+            return alert("A team can have up to 12 runners");
         j.find(he => he.id === dt) && (U(he => he.map(Ee => Ee.id === dt ? {
             ...Ee,
             name: ke,
             color: Ke,
-            members: z
+            members: z,
+            currentRunnerIndex: Math.min(Ee.currentRunnerIndex || 0, z.length - 1)
         } : Ee)),
         ae(null),
         qe(""),
@@ -51865,7 +51876,8 @@ function Eoe() {
             return alert("Team must have at least one member");
         U(Ge => Ge.map(Tn => Tn.id === z ? {
             ...Tn,
-            members: Ee
+            members: Ee,
+            currentRunnerIndex: Math.min(Tn.currentRunnerIndex || 0, Ee.length - 1)
         } : Tn)),
         kt(`${ie} removed from team`)
     }
@@ -52018,7 +52030,6 @@ function Eoe() {
                         children: "Race"
                     }), C.jsx("button", {
                         onClick: () => r("tv"),
-                        disabled: j.length === 0,
                         className: `px-3 py-2 rounded-lg transition-colors ${n === "tv" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-blue-400"}`,
                         children: C.jsx(q5, {
                             size: 18
@@ -52689,7 +52700,12 @@ function Eoe() {
                 })
             }), n === "social" && C.jsxs("div", {
                 className: "space-y-8 animate-in fade-in duration-500",
-                children: [C.jsxs(or, {
+                children: [C.jsx(Gt, {
+                    variant: "secondary",
+                    onClick: () => r(j.length > 0 ? "race" : "tv"),
+                    className: "w-full sm:w-auto",
+                    children: "← Back to Race"
+                }), C.jsxs(or, {
                     className: "text-center pt-12 pb-12 border-pink-500/30",
                     children: [C.jsx("div", {
                         className: "flex justify-center mb-8",

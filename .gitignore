@@ -1,4 +1,7 @@
 work/
 firebase-debug.log
+functions/node_modules/
+functions/.secret.local
+functions/.env*
 firepit-log.txt
 .firebase/

@@ -3,6 +3,10 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs22"
+  },
   "auth": {
     "authorizedDomains": [
       "localhost",
@@ -25,6 +29,7 @@
       ".firebaserc",
       ".gitignore",
       "README.md",
+      "functions/**",
       "work/**",
       "outputs/**",
       "firepit-log.txt",

@@ -1,23 +1,18 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import {
-  browserLocalPersistence,
-  getRedirectResult,
-  getAuth,
-  GoogleAuthProvider,
-  setPersistence,
-  signInWithRedirect,
-  signOut,
-} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
-import {
+  connectFirestoreEmulator,
   doc,
   getFirestore,
+  getDoc,
   onSnapshot,
-  runTransaction,
-  serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import {
+  connectFunctionsEmulator,
+  getFunctions,
+  httpsCallable,
+} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-functions.js";
 
 const APP_SCRIPT = "assets/index-CzAOxx0j.js";
-const ADMIN_EMAIL = "kavinagrawal20@gmail.com";
 const MAX_SNAPSHOT_BYTES = 900_000;
 
 const defaultRace = {
@@ -44,17 +39,23 @@ const loadFirebaseConfig = async () => {
 const createStore = async () => {
   const config = await loadFirebaseConfig();
   const app = initializeApp(config);
-  const auth = getAuth(app);
   const db = getFirestore(app);
-  await setPersistence(auth, browserLocalPersistence);
-  await getRedirectResult(auth);
+  const functions = getFunctions(app, "us-central1");
+  if (["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+    connectFirestoreEmulator(db, "127.0.0.1", 8080);
+    connectFunctionsEmulator(functions, "127.0.0.1", 5001);
+  }
 
   const raceRef = doc(db, "raceSnapshots", "main");
+  const raceAdmin = httpsCallable(functions, "raceAdmin");
   const listeners = new Set();
   let lastRemote = null;
   let lastRemotePayload = "";
   let lastRevision = 0;
   let writeQueue = Promise.resolve();
+  let pendingWrites = 0;
+  let adminMode = false;
+  let adminPin = null;
 
   const notify = (snapshot) => {
     for (const listener of listeners) listener(clone(snapshot));
@@ -64,6 +65,8 @@ const createStore = async () => {
     if (!snapshot.exists()) return;
     const data = snapshot.data();
     try {
+      const remoteRevision = data.revision || 0;
+      if (remoteRevision < lastRevision) return;
       const parsed = {
         teams: JSON.parse(data.teamsJson || "[]"),
         race: data.race || defaultRace,
@@ -71,62 +74,72 @@ const createStore = async () => {
       };
       lastRemote = parsed;
       lastRemotePayload = stablePayload(parsed);
-      lastRevision = data.revision || 0;
-      notify(parsed);
+      lastRevision = remoteRevision;
+      if (!adminMode || pendingWrites === 0) notify(parsed);
     } catch (error) {
       console.error("Ignoring an invalid race snapshot:", error);
     }
   }, (error) => console.error("Live race connection failed:", error));
 
-  const isAdmin = () => {
-    const user = auth.currentUser;
-    return Boolean(user && user.email === ADMIN_EMAIL && user.emailVerified);
-  };
+  const isAdmin = () => adminMode;
 
-  const loginAdmin = async () => {
-    if (isAdmin()) return true;
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ login_hint: ADMIN_EMAIL, prompt: "select_account" });
-    await signInWithRedirect(auth, provider);
-    return false;
+  const loginAdmin = async (pin) => {
+    const result = await raceAdmin({ action: "verify", pin });
+    if (!result.data?.verified) throw new Error("Admin password could not be verified.");
+    adminPin = pin;
+    adminMode = true;
+    return true;
   };
 
   const logoutAdmin = async () => {
-    if (auth.currentUser) await signOut(auth);
+    adminPin = null;
+    adminMode = false;
   };
 
   const saveSnapshot = (nextSnapshot) => {
     const desired = clone(nextSnapshot);
     const payload = stablePayload(desired);
     if (payload === lastRemotePayload) return Promise.resolve();
-    if (!isAdmin()) return Promise.reject(new Error("Admin sign-in is required to save changes."));
+    if (!isAdmin()) return Promise.reject(new Error("Admin mode is required to save changes."));
     if (new TextEncoder().encode(payload).length > MAX_SNAPSHOT_BYTES) {
       return Promise.reject(new Error("The race history is too large to save safely."));
     }
 
-    writeQueue = writeQueue.then(async () => {
+    pendingWrites += 1;
+    writeQueue = writeQueue.catch(() => {}).then(async () => {
       const queuedPayload = stablePayload(desired);
       if (queuedPayload === lastRemotePayload) return;
-      const baseRevision = lastRevision;
-      await runTransaction(db, async (transaction) => {
-        const current = await transaction.get(raceRef);
-        const currentRevision = current.exists() ? (current.data().revision || 0) : 0;
-        if (currentRevision !== baseRevision) {
-          throw new Error("Race data changed on another device. The latest data has been reloaded; please repeat your action.");
+      let result;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const baseRevision = lastRevision;
+        try {
+          result = await raceAdmin({
+            action: "save",
+            pin: adminPin,
+            expectedRevision: baseRevision,
+            snapshot: desired,
+          });
+          if (result.data?.conflict) {
+            if (attempt > 0) throw new Error("Race data changed on another device. Reload and repeat the action.");
+            const current = await getDoc(raceRef);
+            if (!current.exists()) throw new Error("The latest race data could not be loaded.");
+            lastRevision = current.data().revision || result.data.revision || 0;
+            continue;
+          }
+          break;
+        } catch (error) {
+          if (error.code !== "functions/aborted" || attempt > 0) throw error;
+          const current = await getDoc(raceRef);
+          if (!current.exists()) throw error;
+          lastRevision = current.data().revision || 0;
         }
-        transaction.set(raceRef, {
-          schemaVersion: 1,
-          race: desired.race || defaultRace,
-          teamsJson: JSON.stringify(desired.teams || []),
-          announcementsJson: JSON.stringify(desired.announcements || []),
-          revision: currentRevision + 1,
-          updatedAt: serverTimestamp(),
-          updatedBy: auth.currentUser.uid,
-        });
-        lastRevision = currentRevision + 1;
-        lastRemotePayload = queuedPayload;
-        lastRemote = desired;
-      });
+      }
+      if (!result?.data?.revision) throw new Error("The race update was not confirmed.");
+      lastRevision = result.data.revision;
+      lastRemotePayload = queuedPayload;
+      lastRemote = desired;
+    }).finally(() => {
+      pendingWrites = Math.max(0, pendingWrites - 1);
     });
     return writeQueue;
   };

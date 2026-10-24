@@ -15,7 +15,9 @@ A real-time race-management dashboard for the MUWCI 24 Hour Race.
 
 ## Administrator access
 
-Open the Admin panel, enter the event PIN, and complete the authorized Google sign-in. Only the configured race administrator account can write to the shared race data.
+Open the Admin panel and enter the event PIN. Successful PIN entry opens the Setup screen immediately; no account sign-in is required. The PIN is verified by a Cloud Function and is never stored in the website files or Firestore.
+
+Keep the PIN limited to trusted race staff and change it before the event if it has been broadly shared.
 
 ## Local testing
 
@@ -23,6 +25,6 @@ Serve this directory from a local web server. Firebase's reserved `/__/firebase/
 
 ## Deployment
 
-The project uses Firebase Hosting, Authentication, and Cloud Firestore. Its deployment configuration is in `firebase.json`, and the database access policy is in `firestore.rules`.
+The project uses Firebase Hosting, Cloud Functions, Secret Manager, and Cloud Firestore. Its deployment configuration is in `firebase.json`, and the database access policy is in `firestore.rules`. Browser writes are denied; validated changes are made only by the server-side function after PIN verification.
 
 Do not add Firebase service-account credentials, access tokens, or private keys to this repository.

@@ -1,106 +1,12 @@
-// ===============================================================
-// Assumed Data Model
-// ===============================================================
-// Collection: raceSnapshots
-// Document ID: main
-// Fields:
-//   schemaVersion: int (required, immutable, exactly 1)
-//   race: map (required) - 24-hour race timer state
-//   teamsJson: string (required, <= 850,000 chars) - compact public team/lap snapshot
-//   announcementsJson: string (required, <= 50,000 chars) - compact public announcements
-//   revision: int (required, increments exactly once per write)
-//   updatedAt: timestamp (required, server write time)
-//   updatedBy: string (required, authenticated admin UID)
-//
-// Public spectators may only read this non-sensitive event data.
-// Only the verified event admin may create, update, or delete it.
-// ===============================================================
-
+// Public spectators may read the single live race snapshot.
+// Every browser write is denied. The raceAdmin Cloud Function verifies the
+// event PIN and uses the Admin SDK to perform validated, revision-checked writes.
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    function uidUnchanged() {
-      return isOwner(request.resource.data.updatedBy);
-    }
-
-    function uidNotModified() {
-      return isOwner(request.resource.data.updatedBy);
-    }
-
-    function isAdmin() {
-      return isAuthenticated() &&
-        request.auth.token.email == 'kavinagrawal20@gmail.com' &&
-        request.auth.token.email_verified == true;
-    }
-
-    function hasRequiredFields(data) {
-      return data.keys().hasAll([
-        'schemaVersion', 'race', 'teamsJson', 'announcementsJson',
-        'revision', 'updatedAt', 'updatedBy'
-      ]);
-    }
-
-    function validStatus(status) {
-      return status in ['idle', 'running', 'paused', 'finished'];
-    }
-
-    function isValidRace(race) {
-      return race is map &&
-        race.keys().hasOnly([
-          'status', 'startTime', 'timeRemainingAtPause', 'totalDurationSeconds'
-        ]) &&
-        race.keys().hasAll([
-          'status', 'startTime', 'timeRemainingAtPause', 'totalDurationSeconds'
-        ]) &&
-        validStatus(race.status) &&
-        (race.startTime == null || race.startTime is int) &&
-        (race.timeRemainingAtPause == null ||
-          (race.timeRemainingAtPause is number &&
-           race.timeRemainingAtPause >= 0 &&
-           race.timeRemainingAtPause <= race.totalDurationSeconds)) &&
-        race.totalDurationSeconds is int &&
-        race.totalDurationSeconds > 0 &&
-        race.totalDurationSeconds <= 172800;
-    }
-
-    function isValidRaceSnapshot(data) {
-      return hasRequiredFields(data) &&
-        data.keys().hasOnly([
-          'schemaVersion', 'race', 'teamsJson', 'announcementsJson',
-          'revision', 'updatedAt', 'updatedBy'
-        ]) &&
-        data.schemaVersion == 1 &&
-        isValidRace(data.race) &&
-        data.teamsJson is string &&
-        data.teamsJson.size() <= 850000 &&
-        data.announcementsJson is string &&
-        data.announcementsJson.size() <= 50000 &&
-        data.revision is int && data.revision > 0 &&
-        data.updatedAt is timestamp && data.updatedAt == request.time &&
-        data.updatedBy is string && data.updatedBy.size() >= 1 &&
-        data.updatedBy.size() <= 128;
-    }
-
     match /raceSnapshots/{snapshotId} {
       allow read: if snapshotId == 'main';
-      allow create: if snapshotId == 'main' && isAdmin() &&
-        uidUnchanged() &&
-        isValidRaceSnapshot(request.resource.data) &&
-        request.resource.data.revision == 1;
-      allow update: if snapshotId == 'main' && isAdmin() &&
-        uidNotModified() &&
-        isValidRaceSnapshot(request.resource.data) &&
-        request.resource.data.schemaVersion == resource.data.schemaVersion &&
-        request.resource.data.revision == resource.data.revision + 1;
-      allow delete: if snapshotId == 'main' && isAdmin();
+      allow create, update, delete: if false;
     }
 
     match /{document=**} {
