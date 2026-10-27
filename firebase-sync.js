@@ -12,8 +12,10 @@ import {
   httpsCallable,
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-functions.js";
 
-const APP_SCRIPT = "assets/index-CzAOxx0j.js";
+const APP_SCRIPT = "assets/index-CzAOxx0j.js?v=20261027-1";
 const MAX_SNAPSHOT_BYTES = 900_000;
+const FIREBASE_CONFIG_KEY = "muwci-race-firebase-config-v1";
+const PENDING_SYNC_KEY = "muwci-race-pending-sync-v1";
 
 const defaultRace = {
   status: "idle",
@@ -29,11 +31,27 @@ const stablePayload = (value) => JSON.stringify({
   announcements: value.announcements || [],
 });
 
+const loadStoredJson = (key) => {
+  try {
+    return JSON.parse(localStorage.getItem(key));
+  } catch {
+    return null;
+  }
+};
+
 const loadFirebaseConfig = async () => {
   if (window.__FIREBASE_CONFIG__) return window.__FIREBASE_CONFIG__;
-  const response = await fetch("/__/firebase/init.json", { cache: "no-store" });
-  if (!response.ok) throw new Error("Firebase configuration is unavailable.");
-  return response.json();
+  try {
+    const response = await fetch("/__/firebase/init.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("Firebase configuration is unavailable.");
+    const config = await response.json();
+    localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(config));
+    return config;
+  } catch (error) {
+    const stored = loadStoredJson(FIREBASE_CONFIG_KEY);
+    if (stored) return stored;
+    throw error;
+  }
 };
 
 const createStore = async () => {
@@ -49,6 +67,7 @@ const createStore = async () => {
   const raceRef = doc(db, "raceSnapshots", "main");
   const raceAdmin = httpsCallable(functions, "raceAdmin");
   const listeners = new Set();
+  const statusListeners = new Set();
   let lastRemote = null;
   let lastRemotePayload = "";
   let lastRevision = 0;
@@ -56,9 +75,47 @@ const createStore = async () => {
   let pendingWrites = 0;
   let adminMode = false;
   let adminPin = null;
+  let pendingSnapshot = loadStoredJson(PENDING_SYNC_KEY);
+  let syncStatus = {
+    state: navigator.onLine ? (pendingSnapshot ? "pending" : "synced") : "offline",
+    pending: Boolean(pendingSnapshot),
+    message: pendingSnapshot ? "Changes waiting to sync" : "All changes saved",
+  };
 
   const notify = (snapshot) => {
     for (const listener of listeners) listener(clone(snapshot));
+  };
+
+  const updateStatus = (next) => {
+    syncStatus = { ...syncStatus, ...next };
+    for (const listener of statusListeners) listener({ ...syncStatus });
+  };
+
+  const storePendingSnapshot = (snapshot) => {
+    pendingSnapshot = clone(snapshot);
+    localStorage.setItem(PENDING_SYNC_KEY, JSON.stringify(pendingSnapshot));
+    updateStatus({
+      state: navigator.onLine ? "pending" : "offline",
+      pending: true,
+      message: navigator.onLine ? "Saving changes…" : "Offline — changes saved on this device",
+    });
+  };
+
+  const clearPendingSnapshot = (savedPayload) => {
+    if (pendingSnapshot && stablePayload(pendingSnapshot) !== savedPayload) return;
+    pendingSnapshot = null;
+    localStorage.removeItem(PENDING_SYNC_KEY);
+    updateStatus({ state: "synced", pending: false, message: "All changes saved" });
+  };
+
+  const isConnectionError = (error) => {
+    const code = String(error?.code || "");
+    return !navigator.onLine || [
+      "functions/unavailable",
+      "functions/deadline-exceeded",
+      "unavailable",
+      "deadline-exceeded",
+    ].some((value) => code.includes(value));
   };
 
   onSnapshot(raceRef, (snapshot) => {
@@ -75,11 +132,14 @@ const createStore = async () => {
       lastRemote = parsed;
       lastRemotePayload = stablePayload(parsed);
       lastRevision = remoteRevision;
-      if (!adminMode || pendingWrites === 0) notify(parsed);
+      if (!adminMode || (pendingWrites === 0 && !pendingSnapshot)) notify(parsed);
     } catch (error) {
       console.error("Ignoring an invalid race snapshot:", error);
     }
-  }, (error) => console.error("Live race connection failed:", error));
+  }, (error) => {
+    console.error("Live race connection failed:", error);
+    if (!navigator.onLine) updateStatus({ state: "offline", message: "Offline — changes saved on this device" });
+  });
 
   const isAdmin = () => adminMode;
 
@@ -88,6 +148,7 @@ const createStore = async () => {
     if (!result.data?.verified) throw new Error("Admin password could not be verified.");
     adminPin = pin;
     adminMode = true;
+    if (pendingSnapshot && navigator.onLine) void flushPendingSnapshot();
     return true;
   };
 
@@ -96,19 +157,25 @@ const createStore = async () => {
     adminMode = false;
   };
 
-  const saveSnapshot = (nextSnapshot) => {
-    const desired = clone(nextSnapshot);
+  const sendSnapshot = (desired) => {
+    desired = clone(desired);
     const payload = stablePayload(desired);
-    if (payload === lastRemotePayload) return Promise.resolve();
-    if (!isAdmin()) return Promise.reject(new Error("Admin mode is required to save changes."));
+    if (payload === lastRemotePayload) {
+      clearPendingSnapshot(payload);
+      return Promise.resolve({ queued: false, revision: lastRevision });
+    }
     if (new TextEncoder().encode(payload).length > MAX_SNAPSHOT_BYTES) {
       return Promise.reject(new Error("The race history is too large to save safely."));
     }
 
     pendingWrites += 1;
+    updateStatus({ state: "pending", pending: true, message: "Saving changes…" });
     writeQueue = writeQueue.catch(() => {}).then(async () => {
       const queuedPayload = stablePayload(desired);
-      if (queuedPayload === lastRemotePayload) return;
+      if (queuedPayload === lastRemotePayload) {
+        clearPendingSnapshot(queuedPayload);
+        return { queued: false, revision: lastRevision };
+      }
       let result;
       for (let attempt = 0; attempt < 2; attempt += 1) {
         const baseRevision = lastRevision;
@@ -138,17 +205,67 @@ const createStore = async () => {
       lastRevision = result.data.revision;
       lastRemotePayload = queuedPayload;
       lastRemote = desired;
+      clearPendingSnapshot(queuedPayload);
+      return { queued: false, revision: lastRevision };
+    }).catch((error) => {
+      if (isConnectionError(error)) {
+        updateStatus({ state: "offline", pending: true, message: "Offline — changes saved on this device" });
+        return { queued: true };
+      }
+      throw error;
     }).finally(() => {
       pendingWrites = Math.max(0, pendingWrites - 1);
     });
     return writeQueue;
   };
 
+  function flushPendingSnapshot() {
+    if (!pendingSnapshot || !isAdmin() || !navigator.onLine) return Promise.resolve({ queued: Boolean(pendingSnapshot) });
+    return sendSnapshot(clone(pendingSnapshot));
+  }
+
+  const saveSnapshot = (nextSnapshot) => {
+    const desired = clone(nextSnapshot);
+    const payload = stablePayload(desired);
+    if (payload === lastRemotePayload && !pendingSnapshot) return Promise.resolve({ queued: false });
+    if (!isAdmin()) return Promise.reject(new Error("Admin mode is required to save changes."));
+    if (new TextEncoder().encode(payload).length > MAX_SNAPSHOT_BYTES) {
+      return Promise.reject(new Error("The race history is too large to save safely."));
+    }
+    storePendingSnapshot(desired);
+    if (!navigator.onLine) return Promise.resolve({ queued: true });
+    return sendSnapshot(desired);
+  };
+
+  window.addEventListener("offline", () => {
+    updateStatus({
+      state: "offline",
+      pending: Boolean(pendingSnapshot),
+      message: pendingSnapshot ? "Offline — changes saved on this device" : "Offline",
+    });
+  });
+  window.addEventListener("online", () => {
+    updateStatus({
+      state: pendingSnapshot ? "pending" : "synced",
+      pending: Boolean(pendingSnapshot),
+      message: pendingSnapshot ? "Connection restored — synchronizing…" : "Online",
+    });
+    if (pendingSnapshot && isAdmin()) void flushPendingSnapshot();
+  });
+
   return {
     subscribe(listener) {
       listeners.add(listener);
       if (lastRemote) listener(clone(lastRemote));
       return () => listeners.delete(listener);
+    },
+    subscribeStatus(listener) {
+      statusListeners.add(listener);
+      listener({ ...syncStatus });
+      return () => statusListeners.delete(listener);
+    },
+    getSyncStatus() {
+      return { ...syncStatus };
     },
     saveSnapshot,
     loginAdmin,

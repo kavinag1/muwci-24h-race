@@ -51341,6 +51341,43 @@ const B_ = t => {
     })]
 });
 const LOCAL_RACE_KEY = "muwci-race-original-local-v1"
+  , RACE_BACKUP_KEY = "muwci-race-auto-backups-v1"
+  , DUPLICATE_LAP_WINDOW_MS = 9e4
+  , saveAutomaticBackup = t => {
+    try {
+        const e = {
+            teams: t.teams || [],
+            race: t.race,
+            announcements: t.announcements || []
+        }
+          , n = JSON.stringify(e)
+          , r = JSON.parse(localStorage.getItem(RACE_BACKUP_KEY) || "[]");
+        if (r[0]?.payload === n)
+            return r[0].createdAt;
+        const a = Date.now();
+        return localStorage.setItem(RACE_BACKUP_KEY, JSON.stringify([{
+            createdAt: a,
+            payload: n
+        }, ...r].slice(0, 5))),
+        a
+    } catch (t) {
+        return console.error("Unable to create automatic backup:", t),
+        null
+    }
+}
+  , downloadRaceFile = (t, e, n) => {
+    const r = URL.createObjectURL(new Blob([e],{
+        type: n
+    }))
+      , a = document.createElement("a");
+    a.href = r,
+    a.download = t,
+    document.body.appendChild(a),
+    a.click(),
+    a.remove(),
+    setTimeout( () => URL.revokeObjectURL(r), 1e3)
+}
+  , csvCell = t => `"${String(t ?? "").replaceAll('"', '""')}"`
   , loadLocalRace = () => {
     try {
         const t = JSON.parse(localStorage.getItem(LOCAL_RACE_KEY));
@@ -51403,13 +51440,22 @@ function Eoe() {
       , [de,Ot] = T.useState("")
       , [Ke,$t] = T.useState("")
       , [AdminPassword,setAdminPassword] = T.useState("")
+      , [syncStatus,setSyncStatus] = T.useState(window.MuwciRaceStore?.getSyncStatus?.() || {
+        state: navigator.onLine ? "synced" : "offline",
+        pending: !1,
+        message: navigator.onLine ? "All changes saved" : "Offline"
+    })
+      , [lastBackupAt,setLastBackupAt] = T.useState(null)
       , jt = T.useMemo( () => j.find(z => z.id === d) || null, [j, d]);
     T.useEffect( () => {
-        localStorage.setItem(LOCAL_RACE_KEY, JSON.stringify({
+        const z = {
             teams: j,
             race: q,
             announcements: ye
-        })),
+        };
+        localStorage.setItem(LOCAL_RACE_KEY, JSON.stringify(z));
+        const ie = saveAutomaticBackup(z);
+        ie && setLastBackupAt(ie),
         a && window.MuwciRaceStore?.saveSnapshot({
             teams: j,
             race: q,
@@ -51429,8 +51475,12 @@ function Eoe() {
             Array.isArray(he.teams) && U(he.teams),
             he.race && K(he.race),
             Array.isArray(he.announcements) && Se(he.announcements)
-        });
-        return ie
+        })
+          , he = z.subscribeStatus?.(Ee => setSyncStatus(Ee));
+        return () => {
+            ie?.(),
+            he?.()
+        }
     }
     , []);
     const an = async () => Date.now() + $
@@ -51725,17 +51775,28 @@ function Eoe() {
         K(Ge),
         c(null)
     }
+      , confirmSuspiciousLap = (z, ie, he) => {
+        const Ee = [...(z.laps || [])].sort( (Tn, on) => on.timestamp - Tn.timestamp)[0]
+          , Ge = Ee ? he - Ee.timestamp : 1 / 0;
+        if (!(ie < DUPLICATE_LAP_WINDOW_MS || Ge < DUPLICATE_LAP_WINDOW_MS))
+            return !0;
+        const Tn = Ee ? `Only ${Math.max(0, Math.round(Ge / 1e3))} seconds have passed since its last recorded lap.` : `The lap duration is only ${Math.max(0, Math.round(ie / 1e3))} seconds.`;
+        return window.confirm(`Possible duplicate lap for ${z.name}. ${Tn} Record it anyway?`)
+    }
       , Kl = async (z, ie) => {
         const he = await an()
           , Ee = j.find(Sr => Sr.id === z)
           , Ge = $N(Ee)
-          , Tn = (Ee.pausedLapDuration || 0) + (Ee.currentLapStartTime ? he - Ee.currentLapStartTime : 0)
-          , on = [{
+          , Tn = (Ee.pausedLapDuration || 0) + (Ee.currentLapStartTime ? he - Ee.currentLapStartTime : 0);
+        if (!confirmSuspiciousLap(Ee, Tn, he))
+            return;
+        const on = [{
             id: `${he}-${z}-${Ge}`,
             runner: Ee.members[Ee.currentRunnerIndex],
             duration: Tn,
             timestamp: he,
-            lapNumber: Ge
+            lapNumber: Ge,
+            entryType: "handover"
         }, ...Ee.laps];
         U(Sr => Sr.map(rr => rr.id === z ? {
             ...rr,
@@ -51779,13 +51840,16 @@ function Eoe() {
             return alert("Please fill in all fields");
         const ie = Math.max(1, parseInt(me.durationSec, 10)) * 1e3
           , he = await an()
-          , Ee = $N(z)
-          , Tn = [{
+          , Ee = $N(z);
+        if (!confirmSuspiciousLap(z, ie, he))
+            return;
+        const Tn = [{
             id: `${he}-manual-${Ee}`,
             runner: me.runner,
             duration: ie,
             timestamp: he,
-            lapNumber: Ee
+            lapNumber: Ee,
+            entryType: "manual"
         }, ...z.laps];
         U(Lt => Lt.map(on => on.id === z.id ? {
             ...on,
@@ -51809,6 +51873,54 @@ function Eoe() {
             laps: Ee,
             totalLaps: Ee.length
         } : Tn))
+    }
+      , undoLatestLap = async () => {
+        const z = j.flatMap(ie => (ie.laps || []).map(he => ({
+            team: ie,
+            lap: he
+        }))).sort( (ie, he) => he.lap.timestamp - ie.lap.timestamp)[0];
+        if (!z)
+            return alert("There are no laps to undo.");
+        if (!window.confirm(`Undo the latest lap?\n\n${z.team.name} · ${z.lap.runner} · Lap ${z.lap.lapNumber} · ${Wr(z.lap.duration)}`))
+            return;
+        U(ie => ie.map(he => {
+            if (he.id !== z.team.id)
+                return he;
+            const Ee = he.laps.filter(Ge => Ge.id !== z.lap.id)
+              , Ge = z.lap.entryType === "handover" || !String(z.lap.id).includes("-manual-")
+              , Tn = he.members.indexOf(z.lap.runner);
+            return {
+                ...he,
+                laps: Ee,
+                totalLaps: Ee.length,
+                ...Ge ? {
+                    currentRunnerIndex: Tn >= 0 ? Tn : he.currentRunnerIndex,
+                    currentLapStartTime: Math.max(0, z.lap.timestamp - z.lap.duration),
+                    pausedLapDuration: 0
+                } : {}
+            }
+        }
+        )),
+        kt(`Latest lap for ${z.team.name} was undone.`)
+    }
+      , downloadJsonBackup = () => {
+        const z = new Date().toISOString().replaceAll(":", "-")
+          , ie = {
+            format: "MUWCI 24H Race Backup",
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            teams: j,
+            race: q,
+            announcements: ye
+        };
+        downloadRaceFile(`muwci-race-backup-${z}.json`, JSON.stringify(ie, null, 2), "application/json")
+    }
+      , downloadCsvResults = () => {
+        const z = [["Team", "Runner", "Lap Number", "Duration Seconds", "Recorded At", "Distance Km"]];
+        j.forEach(ie => [...(ie.laps || [])].sort( (he, Ee) => he.timestamp - Ee.timestamp).forEach(he => z.push([ie.name, he.runner, he.lapNumber, Math.round(he.duration / 1e3), new Date(he.timestamp).toISOString(), I6])));
+        const ie = z.map(he => he.map(csvCell).join(",")).join("\n")
+          , he = new Date().toISOString().replaceAll(":", "-");
+        downloadRaceFile(`muwci-race-results-${he}.csv`, ie, "text/csv;charset=utf-8")
     }
       , wr = async () => {
         if (!window.confirm("Are you sure you want to restart the race? This will reset all times and laps."))
@@ -52043,6 +52155,12 @@ function Eoe() {
                         children: C.jsx(F0, {
                             size: 18
                         })
+                    }), a && C.jsxs("span", {
+                        title: syncStatus.message,
+                        className: `hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold ${syncStatus.state === "synced" ? "text-emerald-300 bg-emerald-500/10" : syncStatus.state === "offline" ? "text-amber-300 bg-amber-500/10" : "text-blue-300 bg-blue-500/10"}`,
+                        children: [C.jsx("span", {
+                            className: `h-2 w-2 rounded-full ${syncStatus.state === "synced" ? "bg-emerald-400" : syncStatus.state === "offline" ? "bg-amber-400" : "bg-blue-400 animate-pulse"}`
+                        }), syncStatus.state === "synced" ? "Saved" : syncStatus.state === "offline" ? "Offline" : "Saving"]
                     }), C.jsx("div", {
                         className: "w-px h-6 bg-slate-700 mx-1"
                     }), C.jsx("button", {
@@ -52323,6 +52441,41 @@ function Eoe() {
                                 fill: "currentColor"
                             })
                         })
+                    })]
+                }), a && C.jsxs(or, {
+                    className: `border ${syncStatus.state === "offline" ? "border-amber-500/40" : "border-emerald-500/20"}`,
+                    children: [C.jsxs("div", {
+                        className: "flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between",
+                        children: [C.jsxs("div", {
+                            children: [C.jsx("h3", {
+                                className: "font-black text-white",
+                                children: "Race Safety & Backups"
+                            }), C.jsxs("p", {
+                                className: `text-sm ${syncStatus.state === "offline" ? "text-amber-300" : "text-slate-400"}`,
+                                children: [syncStatus.message, lastBackupAt ? ` · Automatic backup ${new Date(lastBackupAt).toLocaleTimeString("en-IN", {
+                                    hour12: !1
+                                })}` : ""]
+                            })]
+                        }), C.jsxs("div", {
+                            className: "grid grid-cols-1 sm:grid-cols-3 gap-2",
+                            children: [C.jsx(Gt, {
+                                onClick: undoLatestLap,
+                                variant: "danger",
+                                disabled: !j.some(z => z.laps?.length),
+                                children: "Undo Latest Lap"
+                            }), C.jsx(Gt, {
+                                onClick: downloadJsonBackup,
+                                variant: "secondary",
+                                children: "Download Backup"
+                            }), C.jsx(Gt, {
+                                onClick: downloadCsvResults,
+                                variant: "secondary",
+                                children: "Export CSV"
+                            })]
+                        })]
+                    }), syncStatus.state === "offline" && C.jsx("p", {
+                        className: "mt-3 text-xs text-amber-300",
+                        children: "You can keep recording laps. They will synchronize automatically when this device reconnects."
                     })]
                 }), C.jsxs("div", {
                     className: "grid grid-cols-1 xl:grid-cols-[minmax(0,3fr)_minmax(340px,1fr)] gap-6",
