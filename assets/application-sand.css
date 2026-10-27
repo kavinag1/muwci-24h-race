@@ -1,0 +1,110 @@
+/* Shared Sand presentation for the recovered application's existing controls. */
+.sand-app :is(h1,h2,h3,h4) { font-family:var(--sand-display); letter-spacing:-.02em; }
+.sand-app .font-mono { font-family:var(--sand-display); font-variant-numeric:tabular-nums; }
+.sand-app [class*="bg-slate-"] { background-color:var(--sand-card); }
+.sand-app [class*="border-slate-"] { border-color:var(--sand-line); }
+.sand-app [class*="text-slate-"], .sand-app [class*="text-white"] { color:var(--sand-ink); }
+.sand-app :is(.text-slate-400,.text-slate-500,.text-slate-600) { color:var(--sand-muted); }
+.sand-app :is([class*="text-blue-"],[class*="text-cyan-"],[class*="text-emerald-"],[class*="text-green-"],[class*="text-pink-"]) { color:var(--sand-teal); }
+.sand-app [class*="text-red-"] { color:#a6372d; }
+.sand-app [class*="text-amber-"] { color:#795109; }
+.sand-app [class*="bg-gradient-"]:not(.sand-app) { background-image:none; }
+.sand-app .bg-clip-text { color:var(--sand-teal); -webkit-text-fill-color:currentColor; }
+.sand-app :is(.shadow-xl,.shadow-lg) { box-shadow:none; }
+.sand-app [class*="backdrop-blur"] { backdrop-filter:none; }
+.sand-app .sand-card { background:var(--sand-card); border:1px solid var(--sand-line); border-radius:24px; box-shadow:none; }
+.sand-app .sand-button { border-radius:12px; font-weight:600; min-height:42px; box-shadow:none; background-image:none; }
+.sand-app .sand-button:is([data-variant="primary"],[data-variant="success"]) { background:var(--sand-teal); color:#f3efe4; border:1px solid var(--sand-teal); }
+.sand-app .sand-button:is([data-variant="primary"],[data-variant="success"]):hover { background:#17484d; }
+.sand-app .sand-button:is([data-variant="secondary"],[data-variant="outline"]) { background:#e3dac9; color:var(--sand-ink); border-color:var(--sand-line); }
+.sand-app .sand-button:is([data-variant="secondary"],[data-variant="outline"]):hover { background:#d6cbb8; }
+.sand-app .sand-button[data-variant="danger"] { background:#f1dcd2; color:#a6372d; border-color:#d5a59a; }
+.sand-app .sand-button[data-variant="danger"]:hover { background:#e9c8bd; }
+.sand-app .sand-button[data-variant="ghost"] { background:transparent; color:var(--sand-muted); }
+.sand-app .sand-button:disabled { opacity:.45; transform:none; }
+.sand-app :is(input,textarea,select) { background:#f7f2e8!important; border:1px solid var(--sand-line); color:var(--sand-ink)!important; border-radius:12px; min-height:44px; color-scheme:light; }
+.sand-app :is(input,textarea)::placeholder { color:#7b7262; opacity:1; }
+.sand-app :is(input,textarea,select):focus { outline:2px solid var(--sand-teal); outline-offset:2px; box-shadow:none; }
+.sand-app textarea { resize:vertical; }
+.sand-app .ring-white { --tw-ring-color:var(--sand-teal); }
+.sand-app nav button[aria-current="page"] { background:var(--sand-teal); color:#f3efe4; }
+.sand-app nav button { white-space:nowrap; }
+.sand-app .fixed.inset-0 { background:rgb(44 42 36 / .52); color:var(--sand-ink); backdrop-filter:blur(5px); overflow-y:auto; }
+.sand-app .fixed.inset-0 > .sand-card { max-height:calc(100dvh - 32px); overflow-y:auto; }
+.sand-app .fixed.inset-0 .sand-card :is(.bg-slate-950\/50,.bg-slate-900\/60,.bg-slate-800\/30) { background:#e3dac9; }
+.sand-app .fixed.inset-0 button:not(.sand-button):hover { color:var(--sand-teal); }
+.sand-app .recharts-cartesian-grid line { stroke:#c4b9a3; }
+.sand-app .recharts-cartesian-axis :is(line,path) { stroke:#9b907c; }
+.sand-app .recharts-cartesian-axis text { fill:#6d6556; }
+.sand-app .recharts-line path { stroke:var(--sand-teal); }
+.sand-app .recharts-line circle { fill:var(--sand-teal); }
+.sand-app .recharts-default-tooltip { background:#f7f2e8!important; border:1px solid var(--sand-line)!important; border-radius:12px!important; color:var(--sand-ink)!important; }
+.sand-app .recharts-tooltip-item { color:var(--sand-teal)!important; }
+.sand-app .sand-setup { max-width:none; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; align-items:start; }
+.sand-app .sand-setup > * { margin:0!important; min-width:0; }
+.sand-app .sand-register { order:1; }
+.sand-app .sand-announcements { order:2; }
+.sand-app .sand-danger { order:3; }
+.sand-app .sand-manage { order:4; grid-column:1 / -1; }
+.sand-app .sand-start-race { order:5; grid-column:1 / -1; padding:18px; font-family:var(--sand-display); font-size:22px; }
+.sand-app .sand-managed-teams { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+.sand-app .sand-managed-teams > * { margin:0!important; border-width:1px; border-radius:18px; background:#e4dccd; }
+.sand-app .sand-managed-teams .rounded-full { background:#f4eee3; }
+.sand-app .sand-managed-teams h3 { overflow-wrap:anywhere; }
+.sand-app .sand-race-clock { background:var(--sand-teal); padding:28px 36px; color:#f3efe4; }
+.sand-app .sand-race-clock h2 { color:#b7d0d0; }
+.sand-app .sand-race-clock .tabular-nums { font:800 clamp(42px,6vw,80px)/1.1 var(--sand-display); color:var(--sand-gold); letter-spacing:0; }
+.sand-app .sand-race-clock .sand-button { background:var(--sand-card); color:var(--sand-teal); border-color:transparent; }
+.sand-app .sand-backups > div { display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:20px; }
+.sand-app .sand-backups > div > div:last-child { display:flex; flex-wrap:wrap; gap:8px; }
+.sand-app .sand-race-layout { grid-template-columns:minmax(0,1fr) 350px; align-items:start; }
+.sand-app .sand-race-teams { grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+.sand-app .sand-race-team { border-radius:24px; background:var(--sand-card); transform:none; }
+.sand-app .sand-race-team:hover { border-color:var(--sand-teal); }
+.sand-app .sand-race-team h3 { font-size:24px; overflow-wrap:anywhere; }
+.sand-app .sand-race-team .text-5xl { font-size:40px; color:var(--sand-teal); }
+.sand-app .sand-race-team .grid-cols-2 > div { background:#e2d8c6; }
+.sand-app .sand-race-team .py-6 { padding-top:16px; padding-bottom:16px; }
+.sand-app .sand-race-layout > :last-child { border-radius:24px; padding:22px; }
+.sand-app .sand-race-layout > :last-child > h3 { text-transform:none; letter-spacing:0; font-size:20px; color:var(--sand-ink); }
+.sand-app .sand-race-layout > :last-child .rounded-2xl { background:#e2d8c6; border:0; }
+.sand-app .sand-race-layout > :last-child .text-right { flex-shrink:0; }
+.sand-app .sand-race-layout > :last-child .text-2xl { font-size:22px; white-space:nowrap; }
+.sand-app .sand-race-layout > :last-child .font-bold.text-white { font-size:15px; }
+.sand-app .sand-race-layout > :last-child .text-sm { font-size:12px; }
+.sand-app nav button { transition:none; }
+.sand-app .sand-social { max-width:1240px; margin:0 auto; }
+.sand-app .sand-social-hero { background:var(--sand-teal); color:#f3efe4; padding:36px; }
+.sand-app .sand-social-hero :is(h1,p) { color:#f3efe4; }
+.sand-app .sand-social-hero a { background:var(--sand-gold); color:var(--sand-ink); border-radius:16px; box-shadow:none; }
+.sand-app .sand-social a:not(.sand-social-hero a) { background:var(--sand-teal); color:#f3efe4; }
+.sand-app .sand-social iframe { background:#f7f2e8; border-color:var(--sand-line)!important; }
+.sand-app [class*="fixed top-0"] { background:var(--sand-gold); color:var(--sand-ink); border-color:#d5a541; }
+@media (max-width:1100px) {
+  .sand-app .sand-backups > div { align-items:flex-start; flex-direction:column; }
+  .sand-app .sand-setup { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .sand-app .sand-danger { grid-column:1 / -1; }
+  .sand-app .sand-managed-teams { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .sand-app .sand-race-layout { grid-template-columns:1fr; }
+  .sand-app .sand-race-layout > :last-child > .space-y-4 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+  .sand-app .sand-race-layout > :last-child > .space-y-4 > * { margin:0; }
+}
+@media (max-width:640px) {
+  .sand-app .sand-backups > div > div:last-child { display:grid; grid-template-columns:1fr; width:100%; }
+  .sand-app .sand-setup,.sand-app .sand-managed-teams,.sand-app .sand-race-teams { grid-template-columns:1fr; }
+  .sand-app .sand-race-layout > :last-child > .space-y-4 { grid-template-columns:1fr; }
+  .sand-app .sand-card { padding:20px; border-radius:20px; }
+  .sand-app .sand-race-clock { align-items:flex-start; text-align:left; }
+  .sand-app .sand-race-clock .tabular-nums { font-size:44px; }
+  .sand-app .sand-race-team h3 { font-size:22px; }
+  .sand-app .sand-race-team > .p-6 { padding:20px; }
+  .sand-app .sand-lap-actions .sand-button { padding-left:8px; padding-right:8px; }
+  .sand-app .sand-social-hero a { padding:16px; font-size:15px; }
+  .sand-app .sand-social-hero a span { font-size:15px; }
+  .sand-app .fixed.inset-0 { padding:12px; }
+  .sand-app .fixed.inset-0 > .sand-card { max-height:calc(100dvh - 24px); }
+  .sand-app .fixed.inset-0 .p-8 { padding:20px; }
+  .sand-app .fixed.inset-0 .text-4xl { font-size:26px; }
+  .sand-app nav > div { gap:8px; }
+  .sand-app nav button { font-size:12px; padding:8px; }
+}

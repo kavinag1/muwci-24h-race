@@ -1,3 +1,4 @@
+import { SandLeaderboard } from "./leaderboard-sand.js";
 function l5(t, e) {
     for (var n = 0; n < e.length; n++) {
         const r = e[n];
@@ -50946,7 +50947,7 @@ const B_ = t => {
       , r = t.startTime || e;
     return t.status === "running" ? Math.max(0, Math.floor(n - (e - r) / 1e3)) : Math.max(0, Math.floor(t.timeRemainingAtPause ?? n))
 }
-  , Gt = ({children: t, onClick: e, variant: n="primary", className: r="", disabled: a=!1}) => {
+  , Gt = ({children: t, onClick: e, variant: n="primary", className: r="", disabled: a=!1, ...buttonProps}) => {
     const o = "px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
       , l = {
         primary: "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20",
@@ -50957,14 +50958,16 @@ const B_ = t => {
         ghost: "text-slate-400 hover:text-white hover:bg-slate-800"
     };
     return C.jsx("button", {
+        ...buttonProps,
         onClick: e,
         disabled: a,
-        className: `${o} ${l[n]} ${r}`,
+        "data-variant": n,
+        className: `sand-button ${o} ${l[n]} ${r}`,
         children: t
     })
 }
   , or = ({children: t, className: e="", noPadding: n=!1}) => C.jsx("div", {
-    className: `bg-slate-900/40 backdrop-blur-md border border-slate-800 rounded-2xl shadow-xl overflow-hidden ${n ? "" : "p-6"} ${e}`,
+    className: `sand-card bg-slate-900/40 backdrop-blur-md border border-slate-800 rounded-2xl shadow-xl overflow-hidden ${n ? "" : "p-6"} ${e}`,
     children: t
 })
   , _oe = ({runnerName: t, laps: e, onBack: n}) => {
@@ -51011,34 +51014,34 @@ const B_ = t => {
                     data: o,
                     children: [C.jsx(I4, {
                         strokeDasharray: "3 3",
-                        stroke: "#1e293b",
+                        stroke: "#c4b9a3",
                         vertical: !1
                     }), C.jsx(U4, {
                         dataKey: "name",
-                        stroke: "#64748b",
+                        stroke: "#6d6556",
                         fontSize: 10
                     }), C.jsx(B4, {
-                        stroke: "#64748b",
+                        stroke: "#6d6556",
                         fontSize: 10,
                         label: {
                             value: "Secs",
                             angle: -90,
                             position: "insideLeft",
-                            fill: "#475569"
+                            fill: "#6d6556"
                         }
                     }), C.jsx(Wk, {
                         contentStyle: {
-                            backgroundColor: "#0f172a",
+                            backgroundColor: "#f7f2e8",
                             border: "1px solid #1e293b",
                             borderRadius: "8px"
                         }
                     }), C.jsx(V4, {
                         type: "monotone",
                         dataKey: "seconds",
-                        stroke: "#3b82f6",
+                        stroke: "#1f5a60",
                         strokeWidth: 3,
                         dot: {
-                            fill: "#3b82f6",
+                            fill: "#1f5a60",
                             r: 4
                         },
                         activeDot: {
@@ -52054,7 +52057,8 @@ function Eoe() {
     }
     ), [j, Nn, P]);
     return C.jsxs("div", {
-        className: "min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 font-sans relative overflow-x-hidden",
+        "data-page": n,
+        className: `sand-app ${n === "tv" ? "sand-leaderboard " : ""}min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 font-sans relative overflow-x-hidden`,
         children: [C.jsxs("div", {
             className: "pointer-events-none absolute inset-0 opacity-30",
             children: [C.jsx("div", {
@@ -52136,25 +52140,29 @@ function Eoe() {
                     className: "flex bg-slate-800/50 p-1 rounded-xl gap-1 border border-slate-700/50 items-center",
                     children: [a && C.jsx("button", {
                         onClick: () => r("setup"),
+                        "aria-current": n === "setup" ? "page" : undefined,
                         className: `px-4 py-2 rounded-lg text-sm font-medium transition-colors ${n === "setup" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"}`,
                         children: "Setup"
                     }), C.jsx("button", {
                         onClick: () => r("race"),
+                        "aria-current": n === "race" ? "page" : undefined,
                         disabled: j.length === 0,
                         className: `px-4 py-2 rounded-lg text-sm font-medium transition-colors ${n === "race" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"}`,
                         children: "Race"
                     }), C.jsx("button", {
                         onClick: () => r("tv"),
+                        "aria-current": n === "tv" ? "page" : undefined,
+                        "aria-label": "Display leaderboard",
+                        title: "Display leaderboard",
                         className: `px-3 py-2 rounded-lg transition-colors ${n === "tv" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-blue-400"}`,
-                        children: C.jsx(q5, {
-                            size: 18
-                        })
+                        children: [C.jsx(q5, { size: 18 }, "icon"), C.jsx("span", { className: "sand-nav-label", children: "Display" }, "label")]
                     }), C.jsx("button", {
                         onClick: () => r("social"),
+                        "aria-current": n === "social" ? "page" : undefined,
+                        "aria-label": "Gallery",
+                        title: "Gallery",
                         className: `px-3 py-2 rounded-lg transition-colors ${n === "social" ? "bg-slate-700 text-white" : "text-slate-400 hover:text-pink-400"}`,
-                        children: C.jsx(F0, {
-                            size: 18
-                        })
+                        children: [C.jsx(F0, { size: 18 }, "icon"), C.jsx("span", { className: "sand-nav-label", children: "Gallery" }, "label")]
                     }), a && C.jsxs("span", {
                         title: syncStatus.message,
                         className: `hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold ${syncStatus.state === "synced" ? "text-emerald-300 bg-emerald-500/10" : syncStatus.state === "offline" ? "text-amber-300 bg-amber-500/10" : "text-blue-300 bg-blue-500/10"}`,
@@ -52165,20 +52173,19 @@ function Eoe() {
                         className: "w-px h-6 bg-slate-700 mx-1"
                     }), C.jsx("button", {
                         onClick: Hi,
+                        "aria-label": a ? "Leave admin mode" : "Admin login",
+                        title: a ? "Leave admin mode" : "Admin login",
                         className: `p-2 rounded-lg transition-colors ${a ? "text-emerald-400 bg-emerald-500/10" : "text-slate-500 hover:text-slate-300"}`,
-                        children: a ? C.jsx(M5, {
-                            size: 18
-                        }) : C.jsx(k5, {
-                            size: 18
-                        })
+                        children: [a ? C.jsx(M5, { size: 18 }, "icon") : C.jsx(k5, { size: 18 }, "icon"), C.jsx("span", { className: "sand-nav-label", children: a ? "Exit admin" : "Admin" }, "label")]
                     })]
                 })]
             })
         }), C.jsxs("main", {
             className: `${n === "tv" || n === "race" ? "max-w-[1800px]" : "max-w-7xl"} mx-auto px-4 py-8 relative z-10`,
             children: [n === "setup" && a && C.jsxs("div", {
-                className: "max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500",
+                className: "sand-setup max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500",
                 children: [C.jsxs(or, {
+                    className: "sand-register",
                     children: [C.jsxs("h2", {
                         className: "text-2xl font-bold mb-6 flex items-center gap-2",
                         children: [C.jsx(wO, {
@@ -52212,13 +52219,14 @@ function Eoe() {
                         })]
                     })]
                 }), j.length > 0 && C.jsxs(or, {
+                    className: "sand-manage",
                     children: [C.jsxs("h2", {
                         className: "text-2xl font-bold mb-6 flex items-center gap-2",
                         children: [C.jsx(wO, {
                             className: "text-emerald-500"
                         }), " Manage Teams"]
                     }), C.jsx("div", {
-                        className: "space-y-4 max-h-96 overflow-y-auto",
+                        className: "sand-managed-teams space-y-4",
                         children: j.map(z => C.jsx("div", {
                             className: `p-4 rounded-xl border-2 transition-all ${dt === z.id ? "border-blue-500 bg-blue-500/10" : "border-slate-700 bg-slate-900/40"}`,
                             children: dt === z.id ? C.jsxs("div", {
@@ -52315,6 +52323,7 @@ function Eoe() {
                         }, z.id))
                     })]
                 }), C.jsxs(or, {
+                    className: "sand-announcements",
                     children: [C.jsxs("h2", {
                         className: "text-2xl font-bold mb-6 flex items-center gap-2",
                         children: [C.jsx(Nm, {
@@ -52381,6 +52390,7 @@ function Eoe() {
                         })]
                     })]
                 }), C.jsxs(or, {
+                    className: "sand-danger",
                     children: [C.jsxs("h3", {
                         className: "font-bold text-red-500 mb-4 flex items-center gap-2",
                         children: [C.jsx(W5, {
@@ -52412,15 +52422,15 @@ function Eoe() {
                     })]
                 }), j.length > 0 && C.jsxs(Gt, {
                     onClick: Lc,
-                    className: "w-full py-6 text-2xl font-black rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500",
+                    className: "sand-start-race w-full py-6 text-2xl font-black rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500",
                     children: [C.jsx(_O, {
                         fill: "currentColor"
                     }), " Start 24h Race"]
                 })]
             }), n === "race" && C.jsxs("div", {
-                className: "space-y-8 animate-in fade-in duration-500",
+                className: "sand-race space-y-8 animate-in fade-in duration-500",
                 children: [C.jsxs(or, {
-                    className: "flex flex-col md:flex-row justify-between items-center text-center md:text-left border-blue-500/20",
+                    className: "sand-race-clock flex flex-col md:flex-row justify-between items-center text-center md:text-left border-blue-500/20",
                     children: [C.jsxs("div", {
                         children: [C.jsx("h2", {
                             className: "text-blue-400 font-bold uppercase tracking-widest text-xs mb-1",
@@ -52435,15 +52445,12 @@ function Eoe() {
                             variant: q.status === "running" ? "secondary" : "success",
                             onClick: () => Fn(Nn),
                             className: "w-32",
-                            children: q.status === "running" ? C.jsx(F5, {
-                                fill: "currentColor"
-                            }) : C.jsx(_O, {
-                                fill: "currentColor"
-                            })
+                            "aria-label": q.status === "running" ? "Pause race" : "Resume race",
+                            children: [C.jsx(q.status === "running" ? F5 : _O, { size: 18, fill: "currentColor" }, "icon"), q.status === "running" ? "Pause" : "Resume"]
                         })
                     })]
                 }), a && C.jsxs(or, {
-                    className: `border ${syncStatus.state === "offline" ? "border-amber-500/40" : "border-emerald-500/20"}`,
+                    className: `sand-backups border ${syncStatus.state === "offline" ? "border-amber-500/40" : "border-emerald-500/20"}`,
                     children: [C.jsxs("div", {
                         className: "flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between",
                         children: [C.jsxs("div", {
@@ -52478,12 +52485,12 @@ function Eoe() {
                         children: "You can keep recording laps. They will synchronize automatically when this device reconnects."
                     })]
                 }), C.jsxs("div", {
-                    className: "grid grid-cols-1 xl:grid-cols-[minmax(0,3fr)_minmax(340px,1fr)] gap-6",
+                    className: "sand-race-layout grid grid-cols-1 xl:grid-cols-[minmax(0,3fr)_minmax(340px,1fr)] gap-6",
                     children: [C.jsx("div", {
-                        className: "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6",
+                        className: "sand-race-teams grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6",
                         children: Ra.map(z => C.jsxs("div", {
                             onClick: () => Et(z),
-                            className: "bg-slate-900/80 border border-slate-800 rounded-3xl overflow-hidden shadow-lg hover:border-blue-500/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col",
+                            className: "sand-race-team bg-slate-900/80 border border-slate-800 rounded-3xl overflow-hidden shadow-lg hover:border-blue-500/50 hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col",
                             children: [C.jsx("div", {
                                 className: "h-2 w-full",
                                 style: {
@@ -52542,7 +52549,7 @@ function Eoe() {
                                         })]
                                     })]
                                 }), a && C.jsxs("div", {
-                                    className: "grid grid-cols-4 gap-2",
+                                    className: "sand-lap-actions grid grid-cols-4 gap-2",
                                     children: [C.jsx(Gt, {
                                         onClick: ie => {
                                             ie.stopPropagation(),
@@ -52570,9 +52577,8 @@ function Eoe() {
                                         ,
                                         className: "w-full py-3 text-sm font-black",
                                         variant: "primary",
-                                        children: C.jsx(G5, {
-                                            size: 16
-                                        })
+                                        "aria-label": "Add manual lap",
+                                        children: C.jsx(G5, { size: 16 })
                                     }), C.jsx(Gt, {
                                         onClick: ie => {
                                             ie.stopPropagation(),
@@ -52581,9 +52587,8 @@ function Eoe() {
                                         ,
                                         className: "w-full py-3 text-sm font-black",
                                         variant: "danger",
-                                        children: C.jsx(U5, {
-                                            size: 16
-                                        })
+                                        "aria-label": "View and delete laps",
+                                        children: C.jsx(U5, { size: 16 })
                                     }), C.jsx(Gt, {
                                         onClick: ie => {
                                             ie.stopPropagation(),
@@ -52601,194 +52606,17 @@ function Eoe() {
                         projectedTeams: Ra
                     })]
                 })]
-            }), n === "tv" && C.jsxs("div", {
-                className: "space-y-8 animate-in fade-in duration-500",
-                children: [C.jsx(or, {
-                    className: "p-6 md:p-8 border-blue-500/20",
-                    children: C.jsxs("div", {
-                        className: "flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6",
-                        children: [C.jsxs("div", {
-                            children: [C.jsx("h1", {
-                                className: "text-3xl md:text-5xl font-black italic tracking-tighter text-blue-500",
-                                children: "MUWCI 24H RACE"
-                            }), C.jsx("p", {
-                                className: "text-slate-500 font-bold tracking-widest text-sm md:text-xl",
-                                children: "LIVE LEADERBOARD"
-                            })]
-                        }), C.jsxs("div", {
-                            className: "text-left lg:text-right",
-                            children: [C.jsx("p", {
-                                className: "text-blue-400 font-bold tracking-widest text-xs md:text-sm",
-                                children: "TIME REMAINING"
-                            }), C.jsx("p", {
-                                className: "text-5xl md:text-8xl font-mono font-black tabular-nums leading-none tracking-tighter",
-                                children: B_(Nn)
-                            })]
-                        })]
-                    })
-                }), C.jsxs("div", {
-                    className: "grid grid-cols-1 xl:grid-cols-[minmax(0,2fr)_minmax(360px,1fr)] gap-6",
-                    children: [C.jsx("div", {
-                        className: "space-y-4",
-                        children: [...Ra].sort( (z, ie) => ie.totalLaps - z.totalLaps).map( (z, ie) => C.jsxs("div", {
-                            onClick: () => Et(z),
-                            className: "bg-slate-900/50 border border-slate-800 p-6 rounded-3xl relative overflow-hidden cursor-pointer hover:border-blue-500/50 transition-all",
-                            children: [C.jsx("div", {
-                                className: "absolute left-0 top-0 bottom-0 w-3",
-                                style: {
-                                    backgroundColor: z.color
-                                }
-                            }), C.jsxs("div", {
-                                className: "flex flex-col gap-6 pl-6 md:flex-row md:items-center md:justify-between",
-                                children: [C.jsxs("div", {
-                                    className: "flex items-center gap-6",
-                                    children: [C.jsx("span", {
-                                        className: `text-4xl md:text-5xl font-black ${ie < 3 ? "text-blue-500" : "text-slate-700"}`,
-                                        children: ie + 1
-                                    }), C.jsxs("div", {
-                                        className: "text-left",
-                                        children: [C.jsx("h3", {
-                                            className: "text-2xl md:text-3xl font-bold",
-                                            children: z.name
-                                        }), C.jsxs("p", {
-                                            className: "text-slate-500 text-base md:text-lg",
-                                            children: ["Active:", " ", C.jsx("button", {
-                                                onClick: he => {
-                                                    he.stopPropagation(),
-                                                    Et(z, z.members[z.currentRunnerIndex])
-                                                }
-                                                ,
-                                                className: "text-white hover:text-blue-400 transition-colors",
-                                                children: z.members[z.currentRunnerIndex]
-                                            })]
-                                        }), C.jsxs("p", {
-                                            className: "text-sm font-semibold text-emerald-400",
-                                            children: ["Projected: ", z.projectedLaps, " laps (", z.projectedDistance, " km)"]
-                                        }), C.jsxs("p", {
-                                            className: "text-sm font-semibold text-blue-300",
-                                            children: ["Team Avg Pace: ", Wr(z.teamAvgPaceMs)]
-                                        })]
-                                    })]
-                                }), C.jsxs("div", {
-                                    className: "grid grid-cols-2 gap-6 md:min-w-[280px]",
-                                    children: [C.jsxs("div", {
-                                        className: "text-left md:text-right",
-                                        children: [C.jsx("p", {
-                                            className: "text-3xl md:text-4xl font-mono font-black tabular-nums leading-none text-white",
-                                            children: Wr(q.status === "running" && z.currentLapStartTime ? (z.pausedLapDuration || 0) + P - z.currentLapStartTime : z.pausedLapDuration || 0)
-                                        }), C.jsx("p", {
-                                            className: "text-slate-500 font-bold uppercase tracking-widest text-xs md:text-sm",
-                                            children: "Current Runner Time"
-                                        })]
-                                    }), C.jsxs("div", {
-                                        className: "text-left md:text-right",
-                                        children: [C.jsx("p", {
-                                            className: "text-4xl md:text-6xl font-black tabular-nums leading-none",
-                                            children: z.totalLaps
-                                        }), C.jsx("p", {
-                                            className: "text-slate-500 font-bold uppercase tracking-widest text-xs md:text-sm",
-                                            children: "Laps Completed"
-                                        })]
-                                    })]
-                                })]
-                            })]
-                        }, z.id))
-                    }), C.jsxs("div", {
-                        className: "space-y-6",
-                        children: [C.jsx(FN, {
-                            projectedTeams: Ra
-                        }), C.jsxs("div", {
-                            className: "bg-slate-900/30 rounded-3xl border border-slate-800 p-6 md:p-8",
-                            children: [C.jsx("h3", {
-                                className: "text-slate-500 font-bold uppercase tracking-widest mb-6",
-                                children: "Recent Lap History"
-                            }), C.jsx("div", {
-                                className: "space-y-4",
-                                children: j.flatMap(z => z.laps.map(ie => ({
-                                    ...ie,
-                                    color: z.color,
-                                    team: z.name,
-                                    teamId: z.id
-                                }))).sort( (z, ie) => ie.timestamp - z.timestamp).slice(0, 6).map( (z, ie) => C.jsxs("div", {
-                                    className: "flex gap-4 items-center",
-                                    children: [C.jsx("div", {
-                                        className: "w-2 h-10 rounded-full",
-                                        style: {
-                                            backgroundColor: z.color
-                                        }
-                                    }), C.jsxs("div", {
-                                        children: [C.jsx("p", {
-                                            className: "font-bold text-white text-lg",
-                                            children: z.team
-                                        }), C.jsxs("p", {
-                                            className: "text-slate-500 text-sm",
-                                            children: [C.jsx("button", {
-                                                onClick: () => {
-                                                    const he = j.find(Ee => Ee.id === z.teamId);
-                                                    he && Et(he, z.runner)
-                                                }
-                                                ,
-                                                className: "hover:text-blue-400 transition-colors",
-                                                children: z.runner
-                                            }), " ", "· Lap ", z.lapNumber, " · ", Wr(z.duration)]
-                                        })]
-                                    })]
-                                }, ie))
-                            })]
-                        })]
-                    })]
-                }), C.jsxs("div", {
-                    className: "grid grid-cols-1 md:grid-cols-3 gap-6 pt-2",
-                    children: [C.jsxs("div", {
-                        className: "bg-slate-900/40 p-6 rounded-2xl border border-slate-800",
-                        children: [C.jsx("p", {
-                            className: "text-blue-500 font-bold uppercase text-xs mb-2",
-                            children: "Most Distance"
-                        }), Ft.topDist?.name ? C.jsx("button", {
-                            onClick: () => Er(Ft.topDist.team, Ft.topDist.name),
-                            className: "text-2xl font-black hover:text-blue-400 transition-colors text-left",
-                            children: Ft.topDist.name
-                        }) : C.jsx("p", {
-                            className: "text-2xl font-black",
-                            children: "--"
-                        }), C.jsxs("p", {
-                            className: "text-slate-500",
-                            children: [Ft.topDist?.totalDistance || 0, " km"]
-                        })]
-                    }), C.jsxs("div", {
-                        className: "bg-slate-900/40 p-6 rounded-2xl border border-slate-800",
-                        children: [C.jsx("p", {
-                            className: "text-emerald-500 font-bold uppercase text-xs mb-2",
-                            children: "Best Avg Pace"
-                        }), Ft.topPace?.name ? C.jsx("button", {
-                            onClick: () => Er(Ft.topPace.team, Ft.topPace.name),
-                            className: "text-2xl font-black hover:text-blue-400 transition-colors text-left",
-                            children: Ft.topPace.name
-                        }) : C.jsx("p", {
-                            className: "text-2xl font-black",
-                            children: "--"
-                        }), C.jsx("p", {
-                            className: "text-slate-500",
-                            children: Wr(Ft.topPace?.avgPaceMs)
-                        })]
-                    }), C.jsxs("div", {
-                        className: "bg-slate-900/40 p-6 rounded-2xl border border-slate-800",
-                        children: [C.jsx("p", {
-                            className: "text-amber-500 font-bold uppercase text-xs mb-2",
-                            children: "Fastest Lap"
-                        }), Ft.fastest?.name ? C.jsx("button", {
-                            onClick: () => Er(Ft.fastest.team, Ft.fastest.name),
-                            className: "text-2xl font-black hover:text-blue-400 transition-colors text-left",
-                            children: Ft.fastest.name
-                        }) : C.jsx("p", {
-                            className: "text-2xl font-black",
-                            children: "--"
-                        }), C.jsx("p", {
-                            className: "text-slate-500",
-                            children: Wr(Ft.fastest?.fastestLap)
-                        })]
-                    })]
-                })]
+            }), n === "tv" && C.jsx(SandLeaderboard, {
+                createElement: T.createElement,
+                teams: Ra,
+                race: q,
+                now: P,
+                remaining: Nn,
+                records: Ft,
+                onTeam: Et,
+                onRunner: Er,
+                formatTime: Wr,
+                formatClock: B_
             }), n === "race-confirm" && C.jsx("div", {
                 className: "fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4",
                 children: C.jsx(or, {
@@ -52855,14 +52683,14 @@ function Eoe() {
                     })
                 })
             }), n === "social" && C.jsxs("div", {
-                className: "space-y-8 animate-in fade-in duration-500",
+                className: "sand-social space-y-8 animate-in fade-in duration-500",
                 children: [C.jsx(Gt, {
                     variant: "secondary",
                     onClick: () => r(j.length > 0 ? "race" : "tv"),
                     className: "w-full sm:w-auto",
                     children: "← Back to Race"
                 }), C.jsxs(or, {
-                    className: "text-center pt-12 pb-12 border-pink-500/30",
+                    className: "sand-social-hero text-center pt-12 pb-12 border-pink-500/30",
                     children: [C.jsx("div", {
                         className: "flex justify-center mb-8",
                         children: C.jsx("img", {
