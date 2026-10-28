@@ -12,6 +12,15 @@ A real-time race-management dashboard for the MUWCI 24 Hour Race.
 - Public read-only race display
 - Protected administrator controls
 - Real-time synchronization through Cloud Firestore
+- Responsive Sand theme across the leaderboard, race controls, setup, gallery, and dialogs
+- GIVE.asia campaign links for donations and the official live fundraising total
+
+## Fundraising
+
+The leaderboard links to the 24 Hour Race Mahindra 2026 campaign on GIVE.asia.
+The official `/live` counter opens in a separate tab because GIVE.asia blocks
+cross-origin embedding. The site does not scrape, cache, or invent donation totals.
+An inline counter requires an official embeddable widget or supported data feed.
 
 ## Administrator access
 

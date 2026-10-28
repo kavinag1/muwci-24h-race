@@ -12,7 +12,7 @@ import {
   httpsCallable,
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-functions.js";
 
-const APP_SCRIPT = "assets/index-CzAOxx0j.js?v=20261027-1";
+const APP_SCRIPT = "assets/index-CzAOxx0j.js?v=20261027-sand-1";
 const MAX_SNAPSHOT_BYTES = 900_000;
 const FIREBASE_CONFIG_KEY = "muwci-race-firebase-config-v1";
 const PENDING_SYNC_KEY = "muwci-race-pending-sync-v1";
@@ -277,12 +277,13 @@ const createStore = async () => {
 const showStartupError = (error) => {
   console.error(error);
   const root = document.getElementById("root");
-  root.innerHTML = `<div style="min-height:100vh;background:#020617;color:#e2e8f0;display:grid;place-items:center;font-family:system-ui;padding:24px"><div style="max-width:560px;text-align:center"><h1 style="font-size:24px">Unable to connect to the race</h1><p style="color:#94a3b8">Check the internet connection and reload this page.</p></div></div>`;
+  root.innerHTML = `<div style="min-height:100vh;background:#ddd4c3;color:#2c2a24;display:grid;place-items:center;font-family:system-ui;padding:24px"><div style="max-width:560px;text-align:center"><h1 style="font-size:24px">Unable to connect to the race</h1><p style="color:#6d6556">Check the internet connection and reload this page.</p></div></div>`;
 };
 
 try {
   window.MuwciRaceStore = await createStore();
   const script = document.createElement("script");
+  script.type = "module";
   script.src = APP_SCRIPT;
   script.defer = true;
   script.onerror = () => showStartupError(new Error("The application failed to load."));
